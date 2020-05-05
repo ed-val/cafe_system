@@ -134,10 +134,16 @@ export async function cli(args) {
 
   while (shouldAddNewOrder) {
     const dailyReport = await startCafe(options, newOrders);
+    if (dailyReport.tasksErr) {
+      shouldAddNewOrder = false;
+      return;
+    }
     newOrders = await promptForNewEntries({
       drinks: dailyReport.drinks,
       orders: dailyReport.orders
     });
-    if (newOrders.length === 0) shouldAddNewOrder = false;
+    if (newOrders.length === 0) {
+      shouldAddNewOrder = false;
+    }
   }
 }
