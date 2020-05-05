@@ -9,7 +9,7 @@ export default class sortFifo {
     }
   }
 
-  _baristaOneStartsDrink({order_time, brewTime}) {
+  _baristaOneStartsDrink({order_id, order_time, brewTime}) {
     const { startingTime } = this.state;
 
     if (order_time === startingTime) {// barista 1 is starting the shift
@@ -25,7 +25,7 @@ export default class sortFifo {
     }
   }
 
-  _baristaTwoStartsDrink({order_time, brewTime}) {
+  _baristaTwoStartsDrink({order_id, order_time, brewTime}) {
     const { startingTime } = this.state;
 
     if (order_time === startingTime) { // barista 2 is starting the shift
@@ -41,7 +41,7 @@ export default class sortFifo {
     }
   }
 
-  _baristaOneWillStartDrink(brewTime) {
+  _baristaOneWillStartDrink({order_id, brewTime}) {
     const { baristaOneFreeAt } = this.state;
     this.state.baristaOneFreeAt = baristaOneFreeAt + brewTime;
       return {
@@ -51,7 +51,7 @@ export default class sortFifo {
       }
   }
 
-  _baristaTwoWillStartDrink(brewTime) {
+  _baristaTwoWillStartDrink({order_id, brewTime}) {
     const { baristaTwoFreeAt } = this.state;
     this.state.baristaTwoFreeAt = baristaTwoFreeAt + brewTime;
     return {
@@ -74,10 +74,10 @@ export default class sortFifo {
     // if both are busy, call the one is finishing sooner
     if (baristaOneFreeAt < baristaTwoFreeAt) {
       // barista one will be ready first
-      return this._baristaOneWillStartDrink(orderDetails.brewTime);
+      return this._baristaOneWillStartDrink(orderDetails);
     } else {
       // barista two will be ready first
-      return this._baristaTwoWillStartDrink(orderDetails.brewTime);
+      return this._baristaTwoWillStartDrink(orderDetails);
     }
   }
 
