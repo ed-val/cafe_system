@@ -1,79 +1,143 @@
 import arg from 'arg';
 import inquirer from 'inquirer';
+import Fifo from './methods/fifo';
 import { startCafe } from './main';
+import Menu from './methods/menu';
+const fifo = new Fifo();
 
 function parseArgumentsIntoOptions(rawArgs) {
-    const args = arg(
-        {
-            '--useDefault': Boolean,
-            '--install': Boolean,
-            '--data': String,
-            '--method': String,
-            '-m': '--method',
-            '-U': '--useDefault',
-            '-d': '--data',
-            '-i': '--install',
-        },
-        {
-            argv: rawArgs.slice(2),
-        }
-    );
-    return {
-        skipPrompts: args['--useDefault'] || false,
-        jsonPath: args['--data'] || '',
-        method: args['--method'] || '',
-        template: args._[0], // all the extra args are here
-        runInstall: args['--install'] || false,
-    };
+  const args = arg(
+    {
+      '--useDefault': Boolean,
+      '--install': Boolean,
+      '--logInput': Boolean,
+      '--data': String,
+      '--method': String,
+      '-m': '--method',
+      '-U': '--useDefault',
+      '-d': '--data',
+      '-i': '--install',
+      '-l': '--logInput'
+    },
+    {
+      argv: rawArgs.slice(2),
+    }
+  );
+  return {
+    skipPrompts: args['--useDefault'] || false,
+    jsonPath: args['--data'] || '',
+    method: args['--method'].toLowerCase() || '',
+    template: args._[0], // all the extra args are here
+    runInstall: args['--install'] || false,
+    logInput: args['--logInput'] || false,
+  };
 }
 
 async function promptForMissingOptions(options) {
-    const defaultMethod = 'FIFO';
-    const questions = [];
-    if (options.skipPrompts) {
-        console.log(chalk.blue.bold('%s Using default method FIFO'));
-        questions.push({
-            type: 'input',
-            name: 'jsonPath',
-            message: 'Enter path to a valid JSON input file',
-            default: '',
-        });
-        return {
-            ...options,
-            method: options.method || defaultMethod,
-            jsonPath: options.jsonPath || answers.jsonPath
-        };
-    }
-
-    if (!options.method) {
-        questions.push({
-            type: 'list',
-            name: 'method',
-            message: 'Choose a method to continue.',
-            choices: ['FIFO', 'Optimized'],
-            default: defaultMethod,
-        });
-    }
-
-    if (!options.jsonPath) {
-        questions.push({
-            type: 'input',
-            name: 'jsonPath',
-            message: 'Enter a path to a valid JSON input file',
-            default: '',
-        });
-    }
-
-    const answers = await inquirer.prompt(questions);
+  const defaultMethod = 'fifo';
+  const questions = [];
+  if (options.skipPrompts) {
+    console.log(chalk.blue.bold('%s Using default method FIFO'));
+    questions.push({
+      type: 'input',
+      name: 'jsonPath',
+      message: 'Enter path to a valid JSON input file',
+      default: '',
+    });
     return {
-        ...options,
-        method: options.method || answers.method,
-        jsonPath: options.jsonPath || answers.jsonPath
+      ...options,
+      method: options.method || defaultMethod,
+      jsonPath: options.jsonPath || answers.jsonPath
     };
+  }
+
+  if (!options.method) {
+    questions.push({
+      type: 'list',
+      name: 'method',
+      message: 'Choose a method to continue.',
+      choices: ['fifo', 'optimized'],
+      default: defaultMethod,
+    });
+  }
+
+  if (!options.jsonPath) {
+    questions.push({
+      type: 'input',
+      name: 'jsonPath',
+      message: 'Enter a path to a valid JSON input file',
+      default: '',
+    });
+  }
+
+  const answers = await inquirer.prompt(questions);
+  return {
+    ...options,
+    method: options.method || answers.method.toLowerCase(),
+    jsonPath: options.jsonPath || answers.jsonPath
+  };
+}
+
+async function promptForNewEntries({ orders }) {
+  const continueQuestion = [];
+  const newOrderQuestions = [];
+  const defaultOrderTime = fifo.getLastOrderTime(orders);
+  let newOrders = [];
+
+  continueQuestion.push({
+    type: 'confirm',
+    name: 'addNew',
+    message: 'Wish to add a new order? ("No" will exit the program).',
+    default: false,
+  });
+
+  const answers = await inquirer.prompt(continueQuestion);
+
+  if (answers.addNew) {
+    newOrderQuestions.push({
+      type: 'list',
+      name: 'type',
+      message: 'Choose a drink type to continue.',
+      choices: Menu.map(drink => drink.type),
+      default: Menu.map(drink => drink.type)[0],
+    });
+
+    newOrderQuestions.push({
+      type: 'number',
+      name: 'order_time',
+      message: `Choose a time in which the order was made, only after ${defaultOrderTime - 1}`,
+      default: defaultOrderTime,
+      validate: (answer) => {
+        if (answer >= defaultOrderTime && answer <= 100) return true;
+        return "Numbers only. Past orders and orders after 100 are NOT allowed";
+      }
+    });
+
+    const drinkInfo = await inquirer.prompt(newOrderQuestions);
+    const newOrder = {
+      order_id: fifo.createNewOrderID(orders),
+      order_time: drinkInfo.order_time,
+      type: drinkInfo.type,
+    }
+    newOrders = [...orders, newOrder];
+    return newOrders;
+  }
+
+  return [];
 }
 
 export async function cli(args) {
-    let options = parseArgumentsIntoOptions(args);
-    options = await promptForMissingOptions(options);
-    await startCafe(options);
+  let shouldAddNewOrder = true;
+  let newOrders = [];
+  let options = parseArgumentsIntoOptions(args);
+  options = await promptForMissingOptions(options);
+
+  while (shouldAddNewOrder) {
+    const dailyReport = await startCafe(options, newOrders);
+    newOrders = await promptForNewEntries({
+      drinks: dailyReport.drinks,
+      orders: dailyReport.orders
+    });
+    if (newOrders.length === 0) shouldAddNewOrder = false;
+  }
 }
