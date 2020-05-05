@@ -3,10 +3,12 @@ import fs from 'fs';
 import Listr from 'listr';
 import Fifo from './methods/fifo';
 import Optimized from './methods/optimized';
+import Menu from './methods/menu';
 const boxen = require('boxen');
 let orders = [];
 let drinks = []; // processed orders
 let inputOK = true;
+let tasksErr = false;
 // import ncp from 'ncp';
 // import path from 'path';
 // import { promisify } from 'util';
@@ -87,6 +89,17 @@ export function validateFileType(filePath) {
   return true;
 }
 
+function logInputData(data, boxColor, header) {
+  const dataForUser = data.map(item => JSON.stringify(item) + "\n");
+  console.log(chalk.cyan.bold(header));
+  console.log(
+    boxen(
+      dataForUser.toString(),
+      { padding: 1, borderColor: boxColor, borderStyle: 'double' }
+    )
+  );
+}
+
 function validateOrdersTimes(orders) {
   let response = { msg: '', err: false };
   orders.forEach(({ order_time }, i) => {
@@ -100,20 +113,42 @@ function validateOrdersTimes(orders) {
   return response;
 }
 
-function logInputData(data, boxColor, header) {
-  const dataForUser = data.map(item => JSON.stringify(item) + "\n");
-  console.log(chalk.cyan.bold(header));
-  console.log(
-    boxen(
-      dataForUser.toString(),
-      { padding: 1, borderColor: boxColor, borderStyle: 'double' }
-    )
-  );
+function validateInputPropTypes(orders) {
+  let response = { msg: '', err: false };
+
+  function drinkIsInMenu(inputType) {
+    const drink = Menu.find(drink => inputType === drink.type);
+    return typeof(drink) === 'object';
+  }
+  orders.forEach(({order_time, order_id, type}, i) => {
+    if (typeof(order_id) !== 'number') {
+      response = { msg: `Order ${i} has a NaN "order_id" prop`, err: true };
+    } else if (typeof(order_time) !== 'number') {
+      response = { msg: `Order ${i} has a NaN "order_time" prop`, err: true };
+    } else if (!drinkIsInMenu(type)) {
+      response = { 
+        msg: `Order ${i} has an incorrect/uknown enum (${type}) "type" prop`, 
+        err: true 
+      };
+    }
+  });
+  return response;
 }
 
 export async function startCafe(options, newOrders) {
   const fifo = new Fifo();
   const fifoTasks = new Listr([
+    {
+      title: 'Validating orders prop types',
+      task: () => {
+        const evaluation = validateInputPropTypes(
+          newOrders.length > 0 ? newOrders : orders
+        );
+        if (evaluation.err) {
+          throw new Error(evaluation.msg);
+        }
+      }
+    },
     {
       title: 'Validating order times',
       task: () => {
@@ -196,6 +231,7 @@ export async function startCafe(options, newOrders) {
   } catch (error) {
     console.log('%s Input not ready', chalk.red.bold('ERROR'));
     inputOK = false;
+    tasksErr = true;
   }
 
   if (options.method === 'fifo' && inputOK) {
@@ -211,6 +247,7 @@ export async function startCafe(options, newOrders) {
       console.log('%s Tasks ran ok', chalk.green.bold('DONE'));
     } catch (error) {
       console.log('%s One or more issues with tasks', chalk.red.bold('ERROR'));
+      tasksErr = true;
       // console.error(error);
     }
   }
@@ -222,6 +259,7 @@ export async function startCafe(options, newOrders) {
   }
   return {
     drinks,
-    orders: newOrders.length > 0 ? newOrders : orders
+    orders: newOrders.length > 0 ? newOrders : orders,
+    tasksErr,
   };
 }
