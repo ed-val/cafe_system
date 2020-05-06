@@ -72,7 +72,7 @@ export async function startCafe(options, newOrders) {
     {
       title: 'Working fifo algorithm',
       task: () => {
-        drinks = coffeeShop.sortOrders(
+        const drinksProcessed = coffeeShop.sortOrders(
           newOrders.length > 0 ? newOrders : orders
         );
         drinks = drinksProcessed.doable;
@@ -187,7 +187,9 @@ export async function startCafe(options, newOrders) {
       if (undoableDrinks.length > 0) {
         logData(undoableDrinks, 'red', 'Drinks that cant be done in work hours');
       }
-      logData(analiticsMessage, 'yellow', 'Analitics');
+      if (options.method === 'optimized' && options.logInput) {
+        logData(analiticsMessage, 'yellow', 'Analitics');
+      }
       console.log('%s All sorting tasks ran ok', chalk.green.bold('DONE'));
     } catch (error) {
       if (options.verbose) console.error(error);
