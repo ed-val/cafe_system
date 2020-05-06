@@ -9,7 +9,6 @@ function parseArgumentsIntoOptions(rawArgs) {
   const args = arg(
     {
       '--useDefault': Boolean,
-      '--install': Boolean,
       '--logInput': Boolean,
       '--verbose': Boolean,
       '--data': String,
@@ -28,9 +27,10 @@ function parseArgumentsIntoOptions(rawArgs) {
   return {
     skipPrompts: args['--useDefault'] || false,
     jsonPath: args['--data'] || '',
-    method: args['--method'].toLowerCase() || '',
+    method: typeof args['--method'] === 'string'
+      ? args['--method'].toLowerCase()
+      : '',
     template: args._[0], // all the extra args are here
-    runInstall: args['--install'] || false,
     logInput: args['--logInput'] || false,
     verbose: args['--verbose'] || false,
   };
