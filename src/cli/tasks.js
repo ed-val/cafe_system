@@ -72,7 +72,7 @@ export async function startCafe(options, newOrders) {
     {
       title: 'Working fifo algorithm',
       task: () => {
-        const drinksProcessed = coffeeShop.sortOrders(
+        const drinksProcessed = coffeeShop.dispatchDrinks(
           newOrders.length > 0 ? newOrders : orders
         );
         drinks = drinksProcessed.doable;
@@ -88,7 +88,7 @@ export async function startCafe(options, newOrders) {
         optimizedOrders = optimizer.optimizeForProfit(
           newOrders.length > 0 ? newOrders : orders
         );
-        const drinksProcessed = coffeeShop.sortOrders(optimizedOrders);
+        const drinksProcessed = coffeeShop.dispatchDrinks(optimizedOrders);
         drinks = drinksProcessed.doable;
         undoableDrinks = drinksProcessed.undoable;
       }

@@ -31,7 +31,7 @@ export default class CoffeeShop extends Helpers {
     }
   }
 
-  sortOrders(orders) {
+  dispatchDrinks(orders) {
     super.setStartingTime(orders);
     const drinks = orders.map((order) => {
       const brewTime = Menu.find(item => item.type === order.type).brew_time;
