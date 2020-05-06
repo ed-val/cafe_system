@@ -5,9 +5,9 @@ export default class CoffeeShop extends Helpers {
   constructor(props) {
     super(props);
     this.state = {
-      baristaOneFreeAt: 0,
+      baristaOneFreeAt: 0, //time at which the barista id = 1 is going to start its next drink
       baristaTwoFreeAt: 0,
-      startingTime: 0,
+      startingTime: 0, // first order time of the day
     }
   }
 
