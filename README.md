@@ -1,80 +1,135 @@
 # cafe_system
 A small CLI with API included to sort and optimize orders from a coffee shop selling system
 
-# seco-IPH
+### Instalation and first steps
 
-## Fix android release apk
+First make sure you have installed the latest [Node.js](https://nodejs.org/) and npm versions in your machine.
 
-This project was built using RN 0.59.8 tha has an issue with the
-latest gradle of android. This gradle bundles the release apk in a folder RN is not specting, ergo, crashes in release version.
-To fix this downgrade app gradle to 3.3.0
-
-> android/gradle/wrapper/gradle-wrapper.properties:
+Once you unzipped/cloned the project, from inside the project folder run
 
 ```sh
-distributionUrl=https\://services.gradle.org/distributions/gradle-4.10.1-all.zip
+$ npm install
 ```
-and
-
-> android/build.gradle:
+And if you want to globally enable the CLI, run
 
 ```sh
-classpath 'com.android.tools.build:gradle:3.3.0'
+$ npm link
+```
+That will create a symmlink so you can access the CLI commands from anywhere in the system. If you want to remove this symmlink for whatever reason, do so by running
+
+```sh
+$ npm rm --global cafe_sys 
 ```
 
-## Get Android mapbox GL running on REACT 0.59 and mapbox 6.1.3
+### CLI
 
-### The idea is basically to Support the Gradle Plugin version 3.3.1
+**Table of contents**
 
-After react 0.58, gradle from 2.2.1 and earlier is not supported. Mapbox GL use dependencies that need that gradle. To fix this we need to tell mapbox gradle to use the dependencies which make use of gradle 3.3.1 as well.
+| Command/Flag | Short | Description | Type | Default | Needed |
+| --- | --- | --- | --- | --- | --- |
+| cafe-asymm | None | Starts the program | None | None | YES |
+| - -logInput | -l | Logs the input the user selected | Boolean | false | NO |
+| - -verbose | -v | Logs complete error messages catched in the runtime if any | Boolean | false | NO |
+| - -data | -d | Input JSON file. Expects relative path to file | String | None | YES |
+| - -method | -m | Tells which type of algorithm to use. Posible values: "optimized", "fifo"  | Enum | fifo | YES |
 
-Inside the project folder. Then go to:
+**Usage**
 
-> $(PROYECT_FOLDER).../node_modules/@mapbox/react-native-mapbox-gl/android/rctmgl/build.gradle
+You can run a very basic example with all defaults by just running `cafe-asymm`. If you do this, the program is then gonna ask you to choose a method to use and a path to a valid JSON input file.
 
-Change all the content of that folder with this:
+A more elaborated command
 
-```java
-apply plugin: 'com.android.library'
-
-android {
-    compileSdkVersion 28
-    buildToolsVersion '28.0.3'
-
-    defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-}
-
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    // React Native
-    compileOnly "com.facebook.react:react-native:+"
-
-    // Mapbox SDK
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-services:2.2.9'
-
-    // Fix issues
-    implementation 'com.android.support:support-vector-drawable:28.0.0'
-    implementation 'com.android.support:support-annotations:28.0.0'
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
-
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:5.5.1@aar'
-
-    // Mapbox plugins
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-localization:0.1.0'
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-plugin-locationlayer:0.3.0'
-}
+```sh
+cafe-asymm -d ./cafe_system/input_fifo.json -m optimized -l -v 
 ```
+tells the program to search for a "input_fifo.json", to use the "optimized" method, to log the input data, as well as the expected output and to log the complete error messages if there were any while evaluating the program's tasks.
+
+Or run
+
+```sh
+cafe-asymm -d ./cafe_system/input_fifo.json -m optimized
+```
+for minimal commands and to avoid further questioning.
+
+**Added functionality**
+
+> "Asymm Cafe might want to use pieces of your program in a real-world situation where the entire list of orders isn't given at one time."
+
+Whenever an iteration is completed, after the output of the program is logged, this will ask if it should take a new order in to mix with the ones already registered and processed. If you choose to do so, it will ask what kind of drink and order time to use.
+
+This approach tries to mimic a real world situation in which, a barista dispatches each new order at different points in time throughout the day, making use of a dashboard or a easy-to-use UI. 
+
+Using this utility, you can see, with each new iteration you choose to make, how the times, orders, profits and starting times stack up. Useful also for testing purposes. 
+
+**Other considerations when using the CLI**
+
+When using the 'logInput' combined with the 'optimized' algorithm, the program also outputs the optimized input for testing purposes.
+
+When using the 'optimized' algorithm you also get a small analitics report at the end of the logged successful output.
+
+### Project Structure
+
+The program is structred and written in a way that all the CLI logic is separated from the logic of the sorting and optimization algorithms. In this manner one can take out just the modules that hold sorting related logic to work with those methods alone.
+
+* bin folder
+  - __cafe-asymm folder__ - Only holds logic to let this project run a CLI using a specific library.
+* src folder
+  - __cli folder__ 
+    - __index.js__ - Stores all the logic needed to declare the program's CLI flags and create questions to gather input.
+    - __tasks.js__ - Takes care of all the steps involved in a program's iteration as well as manage how output is rendered in the terminal.
+  - __constants folder__ - Stores the Menu object used in the program.
+  - __methods folder__
+    - __coffeShop.js__ - Class that stores the methods for sorting and assigning orders .
+    - __helpers.js__ - Super class that's inherited in CoffeShop and Optimizer to provide aditional functionality and avoid code duplication of methods.
+    - __optimizer.js__ - Class that manages methods only used in the optimized algorithm
+    - __validator.js__ - Class that stores all the methods to validate file existance, input data, extension type, data value types and data props names.
+  - __tests folder__ - Stores the .json files (cases) used when testing the program
+
+Downside to this approach is that all the validation logic, modular as it is, is not directly included in the sorting methods. Meaning to say that, if the Methods library was taken out of this project, all the functions have no validation of any kind and may be prone to error if not given the exact input they are expecting. The last is because I needed to put the validation logic as soon as the input was received from the CLI, and this is at the cli/tasks.js file where all i/o is managed. 
+
+Sure you can also make use of the validator class to validate your input before you pass it on to the sorting methods. 
+
+> "Why using classes for your methods instead of libraries of functions?"
+
+I believe that, by using classes, inheritance and abstraction to manage all the methods I need to solve the algorithms, it gives the code far more readability and a more clean look. In this way you can see right away which method comes from which class. Furthermore, abstraction allowed me to easily share and reuse all my methods, when possible and viable, so I didn't duplicate a single line of code and, on top of this, kept a really organized structure among methods so everything is where it belongs. All the validation methods inside a single class, all the sorting related methods in its own class, all the optmizing methods on its own class, and so on. 
+
+### Optimization metrics
+
+My optimization algorithm focuses on particular cases it may happen along the way. Specifically when multiple orders are dispatched at the same time, (what I called 'bottlenecks'). So I made an algorithm that is capable of prioritizing orders inside bottlenecks based on its profitability.
+
+The way I did it, was firstly, based on the menu, creating this new property called profitability, which can be translated as "profit made per unit of time". The brews with the higher profitability, have higher priority in bottlenecks. 
+
+How I calculate profitability and further explanations can be found in the codes of the  **optimizer.js** class. 
+
+Once I calculated the priority of each brew based on its profitability. I rearranged the orders so I grouped the bottlenecks in arrays that share the same "order_time" prop. Once I did that, I iterate through each of those bottlenecks lists to reorder them, so the most profitable ones, stayed at the beggining of the list. 
+
+So in relatively long bottlenecks, say, more than 5 or 6 orders with the same time order, it is most likely that, the order "n", is not necessarily the one after order "n - 1".
+
+**Other implementations**
+
+When using this algorithm, with each new iteration, you get some analitics to check: average waiting time throughout all the orders, number of drinks made and profits made. This with the intention to show how the algoritm impacts those variables.
+
+**Downsides to this approach**
+
+Well, for one, it is not a very realistic approach. For now, the bottlenecks are grouped by just matching their order time property. In a real life situation, the order time, is never exactly the same, rather it should look for orders that share 5 or 6 minutes of difference between each other. 
+
+Another thing is that it is only focused on profits. Imagining a case in which the most profitable brew is also the one that takes the longest to make, I would end up with a lot of people waiting in line just so I can dispatch first the orders I find most convenient for my wallet, and that translates to unhappy customers. 
+
+### Round up and room for improvement
+
+This was quite a challenge and I loved writing it at every step of the way. 
+
+*Things that I'd love to have implemented:* 
+* CLI flag to also accept the Menu as a parameter, so you can work with different brews.
+* A second implementation algorithm that arranges orders in a way that the average waiting time is as small as possible.
+* Publish this repo as an NPM module. In that way, one could `npm install @myModule` and use any of the methods I made inside any other javascript project by simply `import { methodOne, methodTwo } from '@myModule';`. 
+* Make a complete API documentation of every single one of the methods I created in all the classes this software uses.
+* Use a library like Jasmine or Jest to make all the needed test suites for this software.
+
+Regardless, this was as much time as I was willing to put on this project. 
+
+
+License
+----
+
+MIT
