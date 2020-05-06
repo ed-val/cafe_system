@@ -67,6 +67,8 @@ When using the 'logInput' combined with the 'optimized' algorithm, the program a
 
 When using the 'optimized' algorithm you also get a small analitics report at the end of the logged successful output.
 
+Each validation task is rendered successful or unsuccessful in the terminal. In this way, you know exactly what went wrong with the program if, say, for example, the input data was not valid. 
+
 ### Project Structure
 
 The program is structred and written in a way that all the CLI logic is separated from the logic of the sorting and optimization algorithms. In this manner one can take out just the modules that hold sorting related logic to work with those methods alone.
@@ -114,6 +116,22 @@ When using this algorithm, with each new iteration, you get some analitics to ch
 Well, for one, it is not a very realistic approach. For now, the bottlenecks are grouped by just matching their order time property. In a real life situation, the order time, is never exactly the same, rather it should look for orders that share 5 or 6 minutes of difference between each other. 
 
 Another thing is that it is only focused on profits. Imagining a case in which the most profitable brew is also the one that takes the longest to make, I would end up with a lot of people waiting in line just so I can dispatch first the orders I find most convenient for my wallet, and that translates to unhappy customers. 
+
+### Test Cases
+
+You can find the test cases inside the src/tests folder and you can use your own to test the level of validation of the program. 
+
+* __incorrect_data_types.json__ - Case where the object values in one or more list items are not the expected.
+* __input_exceeds_time_100.json__ - Case when the amount of orders are enough so they exceed the limit of time = 100.
+* __input_fifo.json__ - Input provided by challenge's author.
+* __missing_props.json__ - Case when one or more list items are missing necessary props.
+* __not_valid_json.json__ - Case when the input file is not in valid json format.
+* __order_times_after_100.json__ - Case when any given order is made after t = 100.
+* __FILE NOT FOUND__ - Validation also checks first if the file really exists at given path.
+
+Should any of these cases come to happen, the program logs the error and then crashes. 
+
+With the only excepetion of the __input_exceeds_time_100.json__ case. In that case, the program runs fine and at the end, creates a special log that shows exactly which orders were not able to be made because of its time restriction. 
 
 ### Round up and room for improvement
 
