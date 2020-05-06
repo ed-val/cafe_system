@@ -1,9 +1,9 @@
 import arg from 'arg';
 import inquirer from 'inquirer';
-import Fifo from '../methods/coffeeShop';
+import CoffeShop from '../methods/coffeeShop';
 import { startCafe } from './tasks';
 import Menu from '../constants/menu';
-const fifo = new Fifo();
+const coffeeShop = new CoffeShop();
 
 function parseArgumentsIntoOptions(rawArgs) {
   const args = arg(
@@ -84,7 +84,7 @@ async function promptForMissingOptions(options) {
 async function promptForNewEntries({ orders }) {
   const continueQuestion = [];
   const newOrderQuestions = [];
-  const defaultOrderTime = fifo.getLastOrderTime(orders);
+  const defaultOrderTime = coffeeShop.getLastOrderTime(orders);
   let newOrders = [];
 
   continueQuestion.push({
@@ -118,7 +118,7 @@ async function promptForNewEntries({ orders }) {
 
     const drinkInfo = await inquirer.prompt(newOrderQuestions);
     const newOrder = {
-      order_id: fifo.createNewOrderID(orders),
+      order_id: coffeeShop.createNewOrderID(orders),
       order_time: drinkInfo.order_time,
       type: drinkInfo.type,
     }
