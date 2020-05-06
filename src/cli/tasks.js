@@ -138,21 +138,6 @@ export async function startCafe(options, newOrders) {
       },
       skip: () => skipFileValidation(newOrders),
     },
-    // {
-    //   title: 'Sorting Baristas Orders',
-    //   task: () => initGit(options),
-    // },
-    // {
-    //   title: 'Install dependencies',
-    //   task: () =>
-    //     projectInstall({
-    //       cwd: options.targetDirectory,
-    //     }),
-    //   skip: () =>
-    //     !options.runInstall
-    //       ? 'Pass --install to automatically install dependencies'
-    //       : undefined,
-    // },
   ]);
 
   try {
